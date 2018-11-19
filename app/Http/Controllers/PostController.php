@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use Sentinel;
 use App\Models\Post;
 use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
+	
+		public function __construct(){
+			$this->middleware('sentinel.auth');
+		}
     /**
      * Display a listing of the resource.
      *
@@ -14,7 +19,8 @@ class PostController extends Controller
      */
     public function index()
     {
-        //
+			$posts = Post::orderBy('created_at', 'DESC')->paginate(10);	
+      return view('centaur.posts.index')->with('posts', $posts);
     }
 
     /**
@@ -24,7 +30,7 @@ class PostController extends Controller
      */
     public function create()
     {
-        //
+        return view('centaur.posts.create');
     }
 
     /**
@@ -33,9 +39,23 @@ class PostController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request  $request)
     {
-        //
+				$request->validate([
+					'title' => 'required|max:191',
+					'content' => 'required',
+				]);
+			
+        $post = new Post;
+				
+				$post->user_id = Sentinel::getUser()->id;
+				$post->title = request('title');
+				$post->content = request('content');
+				$post->save();
+				
+				session()->flash('success', 'Uspješno ste dodali novi post!');
+				
+				return redirect()->back();
     }
 
     /**
